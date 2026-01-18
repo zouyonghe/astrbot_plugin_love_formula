@@ -6,7 +6,7 @@ class LLMAnalyzer:
         self.context = context
 
     async def generate_commentary(
-        self, scores: dict, archetype: str, raw_data: dict
+        self, scores: dict, archetype: str, raw_data: dict, provider_id: str = None
     ) -> str:
         s, v, i = scores["simp"], scores["vibe"], scores["ick"]
 
@@ -35,5 +35,5 @@ class LLMAnalyzer:
 
         # Call AstrBot LLM API
         # Using tool_loop_agent=False to just get text generation
-        response = await self.context.llm_generate(prompt)
+        response = await self.context.llm_generate(prompt, chat_provider_id=provider_id)
         return response.completion_text

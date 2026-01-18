@@ -1,21 +1,14 @@
 - [x] Scaffold project structure <!-- id: 7 -->
-    - [x] Create directories (src, assets, etc.) <!-- id: 100 -->
-    - [x] Create __init__.py files <!-- id: 101 -->
-    - [x] Initialize Git repository <!-- id: 102 -->
 - [x] Implement Persistence (`models` & `repo`) <!-- id: 8 -->
-    - [x] Create `models/tables.py` <!-- id: 103 -->
-    - [x] Create `persistence/database.py` <!-- id: 104 -->
-    - [x] Create `persistence/repo.py` <!-- id: 105 -->
 - [x] Implement Love Calculator (`analysis`) <!-- id: 10 -->
-    - [x] Create `analysis/calculator.py` <!-- id: 106 -->
-    - [x] Create `analysis/classifier.py` <!-- id: 107 -->
-    - [x] Create `analysis/llm_analyzer.py` <!-- id: 108 -->
 - [x] Implement NapCat Handlers (`handlers`) <!-- id: 9 -->
-    - [x] Create `handlers/message_handler.py` <!-- id: 109 -->
-    - [x] Create `handlers/notice_handler.py` <!-- id: 110 -->
 - [x] Implement Visual Renderer (`visual`) <!-- id: 11 -->
-    - [x] Create `visual/theme_manager.py` <!-- id: 111 -->
-    - [x] Create `visual/renderer.py` <!-- id: 112 -->
-    - [x] Create `assets/themes/galgame` structure <!-- id: 113 -->
-- [ ] Implement Main Entry (`main.py`) <!-- id: 114 -->
+- [x] Implement Main Entry (`main.py`) <!-- id: 114 -->
+- [ ] Refactor for AstrBot Compatibility <!-- id: 117 -->
+    - [x] Analyze reference plugin structure <!-- id: 118 -->
+    - [x] Create `_conf_schema.json` <!-- id: 119 -->
+    - [ ] Update `main.py` to use config from context (Failed prev attempt) <!-- id: 120 -->
+    - [ ] Update `llm_analyzer.py` to accept provider_id (Failed prev attempt) <!-- id: 122 -->
+    - [ ] Verify directory structure alignment <!-- id: 121 -->
 - [ ] Verification <!-- id: 12 -->
+    - [ ] Run verification script <!-- id: 116 -->

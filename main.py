@@ -68,8 +68,13 @@ class LoveFormulaPlugin(Star):
 
         # 1. Fetch Data
         daily_data = await self.repo.get_today_data(group_id, user_id)
-        if not daily_data:
-            yield event.plain_result("今日暂无恋爱成分数据，请多发言后再试。")
+
+        # Check threshold from config
+        min_msg = self.config.get("min_msg_threshold", 3)
+        if not daily_data or daily_data.msg_sent < min_msg:
+            yield event.plain_result(
+                f"你今天太沉默了（发言少于{min_msg}条），甚至无法测算出恋爱成分。"
+            )
             return
 
         # 2. Calculate Scores
@@ -79,12 +84,19 @@ class LoveFormulaPlugin(Star):
         archetype_key, archetype_name = ArchetypeClassifier.classify(scores)
 
         # 4. LLM Analysis
-        raw_data_dict = daily_data.model_dump()
-        commentary = await self.llm.generate_commentary(
-            scores["raw"], archetype_name, raw_data_dict
-        )
+        commentary = "获取失败"
+        if self.config.get("enable_llm_commentary", True):
+            raw_data_dict = daily_data.model_dump()
+            # Pass provider_id if configured
+            provider_id = self.config.get("llm_provider_id", "")
+            commentary = await self.llm.generate_commentary(
+                scores["raw"], archetype_name, raw_data_dict, provider_id=provider_id
+            )
+        else:
+            commentary = "LLM点评已关闭。"
 
         # 5. Render Image
+        theme = self.config.get("theme", "galgame")
         render_data = {
             "scores": scores,
             "archetype": archetype_name,
@@ -94,7 +106,7 @@ class LoveFormulaPlugin(Star):
         }
 
         try:
-            image_path = await self.renderer.render(render_data)
+            image_path = await self.renderer.render(render_data, theme_name=theme)
             yield event.image_result(image_path)
         except Exception as e:
             logger.error(f"Render failed: {e}", exc_info=True)

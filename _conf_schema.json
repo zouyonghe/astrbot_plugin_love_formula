@@ -1,0 +1,28 @@
+{
+    "theme": {
+        "description": "视觉主题",
+        "type": "string",
+        "options": ["galgame", "y2k_pixel"],
+        "default": "galgame",
+        "hint": "选择生成图片的视觉风格。默认 Galgame 风格。"
+    },
+    "enable_llm_commentary": {
+        "description": "启用 LLM 毒舌点评",
+        "type": "bool",
+        "default": true,
+        "hint": "是否启用基于大语言模型的趣味点评功能。"
+    },
+    "llm_provider_id": {
+        "type": "string",
+        "description": "专用 LLM Provider ID",
+        "_special": "select_provider",
+        "default": "",
+        "hint": "指定用于生成点评的 LLM 模型。留空则使用全局默认。"
+    },
+    "min_msg_threshold": {
+        "type": "int",
+        "description": "最小发言数阈值",
+        "default": 3,
+        "hint": "用户当日发送消息少于此数量时，显示“路人甲/未启动”状态。"
+    }
+}
