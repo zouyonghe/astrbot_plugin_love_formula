@@ -10,8 +10,11 @@
     - [x] Create `analysis/calculator.py` <!-- id: 106 -->
     - [x] Create `analysis/classifier.py` <!-- id: 107 -->
     - [x] Create `analysis/llm_analyzer.py` <!-- id: 108 -->
-- [ ] Implement NapCat Handlers (`handlers`) <!-- id: 9 -->
-    - [ ] Create `handlers/message_handler.py` <!-- id: 109 -->
-    - [ ] Create `handlers/notice_handler.py` <!-- id: 110 -->
+- [x] Implement NapCat Handlers (`handlers`) <!-- id: 9 -->
+    - [x] Create `handlers/message_handler.py` <!-- id: 109 -->
+    - [x] Create `handlers/notice_handler.py` <!-- id: 110 -->
 - [ ] Implement Visual Renderer (`visual`) <!-- id: 11 -->
+    - [ ] Create `visual/theme_manager.py` <!-- id: 111 -->
+    - [ ] Create `visual/renderer.py` <!-- id: 112 -->
+    - [ ] Create `assets/themes/galgame` structure <!-- id: 113 -->
 - [ ] Verification <!-- id: 12 -->
