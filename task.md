@@ -6,7 +6,12 @@
     - [x] Create `models/tables.py` <!-- id: 103 -->
     - [x] Create `persistence/database.py` <!-- id: 104 -->
     - [x] Create `persistence/repo.py` <!-- id: 105 -->
+- [x] Implement Love Calculator (`analysis`) <!-- id: 10 -->
+    - [x] Create `analysis/calculator.py` <!-- id: 106 -->
+    - [x] Create `analysis/classifier.py` <!-- id: 107 -->
+    - [x] Create `analysis/llm_analyzer.py` <!-- id: 108 -->
 - [ ] Implement NapCat Handlers (`handlers`) <!-- id: 9 -->
-- [ ] Implement Love Calculator (`analysis`) <!-- id: 10 -->
+    - [ ] Create `handlers/message_handler.py` <!-- id: 109 -->
+    - [ ] Create `handlers/notice_handler.py` <!-- id: 110 -->
 - [ ] Implement Visual Renderer (`visual`) <!-- id: 11 -->
 - [ ] Verification <!-- id: 12 -->
