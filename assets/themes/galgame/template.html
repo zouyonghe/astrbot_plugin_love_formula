@@ -9,6 +9,9 @@
         @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap');
 
+        /* KaTeX */
+        @import url('https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css');
+
         :root {
             --primary-color: #ff6b81;
             --secondary-color: #ff9eb5;
@@ -229,6 +232,29 @@
             font-weight: bold;
         }
 
+        .equation-section {
+            margin-top: 20px;
+            text-align: center;
+            padding: 15px;
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #eee;
+        }
+
+        .equation-title {
+            font-size: 0.75rem;
+            color: #999;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .equation-content {
+            font-size: 1.1rem;
+            color: var(--primary-color);
+            overflow-x: auto;
+        }
+
         .footer {
             text-align: center;
             font-size: 0.75rem;
@@ -282,9 +308,18 @@
                 </div>
             </div>
 
-            <div class="comment-box">
+            <div class="comment-box markdown-body" id="comment-box">
                 {{ data.comment }}
             </div>
+
+            {% if data.equation %}
+            <div class="equation-section">
+                <div class="equation-title">恋爱演化算式 (Love Evolution Equation)</div>
+                <div class="equation-content" id="equation">
+                    ${{ data.equation }}$
+                </div>
+            </div>
+            {% endif %}
 
             {% if data.logic_insights %}
             <div class="logic-section">
@@ -296,7 +331,7 @@
                 </div>
                 <ul class="logic-list" style="list-style-type: none; padding-left: 0;">
                     {% for item in data.logic_insights %}
-                    <li class="logic-item">{{ item }}</li>
+                    <li class="logic-item markdown-body">{{ item }}</li>
                     {% endfor %}
                 </ul>
                 <div style="font-size: 0.75rem; color: #999; margin-top: 10px; font-style: italic; text-align: right;">
@@ -310,6 +345,27 @@
             </div>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Render Markdown
+            const mdElements = document.querySelectorAll('.markdown-body');
+            mdElements.forEach(el => {
+                el.innerHTML = marked.parse(el.innerText);
+            });
+
+            // Render LaTeX
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false}
+                ],
+                throwOnError : false
+            });
+        });
+    </script>
 </body>
 
 </html>

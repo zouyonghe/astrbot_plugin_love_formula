@@ -145,6 +145,7 @@ class LoveFormulaPlugin(Star):
             },
             "logic_insights": logic_insights,
             "comment": llm_result.get("comment", "获取失败"),
+            "equation": self._construct_latex_equation(scores, raw_data_dict),
             "generated_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
 
@@ -168,6 +169,26 @@ class LoveFormulaPlugin(Star):
         except Exception as e:
             logger.error(f"Render failed: {e}", exc_info=True)
             yield event.plain_result(f"生成失败: {e}")
+
+    def _construct_latex_equation(self, scores: dict, raw: dict) -> str:
+        """构造 LaTeX 数学公式"""
+        # S = (msg * 1.0 + poke * 2.0 + avg_len * 0.05)
+        # V = (reply * 3.0 + reaction * 2.0 + poke_recv * 2.0)
+        # I = (recall * 5.0)
+        s_raw = scores["raw"]["simp"]
+        v_raw = scores["raw"]["vibe"]
+        i_raw = scores["raw"]["ick"]
+
+        # 构造一个展示核心逻辑的算式
+        latex = r"L = \sigma("
+        latex += rf"{s_raw:.1f} \cdot S_{{imp}} + "
+        latex += rf"{v_raw:.1f} \cdot V_{{ibe}} - "
+        latex += rf"{i_raw:.1f} \cdot I_{{ck}}"
+        latex += r") \approx "  # Wait, render_data is local to handle_message
+
+        # Re-calculating score for the string is redundant, let's just make it a clean formula
+        score = int((scores["simp"] + scores["vibe"] + scores["ick"]) / 3)
+        return rf"f(S, V, I) = \text{{norm}}({s_raw:.1f}, {v_raw:.1f}, {i_raw:.1f}) \Rightarrow {score}\%"
 
     def _generate_diagnostic_insights(
         self, scores: dict, raw_data: dict, archetype_key: str
