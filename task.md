@@ -1,0 +1,12 @@
+- [x] Scaffold project structure <!-- id: 7 -->
+    - [x] Create directories (src, assets, etc.) <!-- id: 100 -->
+    - [x] Create __init__.py files <!-- id: 101 -->
+    - [x] Initialize Git repository <!-- id: 102 -->
+- [x] Implement Persistence (`models` & `repo`) <!-- id: 8 -->
+    - [x] Create `models/tables.py` <!-- id: 103 -->
+    - [x] Create `persistence/database.py` <!-- id: 104 -->
+    - [x] Create `persistence/repo.py` <!-- id: 105 -->
+- [ ] Implement NapCat Handlers (`handlers`) <!-- id: 9 -->
+- [ ] Implement Love Calculator (`analysis`) <!-- id: 10 -->
+- [ ] Implement Visual Renderer (`visual`) <!-- id: 11 -->
+- [ ] Verification <!-- id: 12 -->
