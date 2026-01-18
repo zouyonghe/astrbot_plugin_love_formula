@@ -2,7 +2,7 @@
     "theme": {
         "description": "视觉主题",
         "type": "string",
-        "options": ["galgame", "y2k_pixel"],
+        "options": ["galgame"],
         "default": "galgame",
         "hint": "选择生成图片的视觉风格。默认 Galgame 风格。"
     },
