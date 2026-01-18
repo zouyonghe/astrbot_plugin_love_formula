@@ -7,12 +7,12 @@ class LLMAnalyzer:
 
     async def generate_commentary(
         self, scores: dict, archetype: str, raw_data: dict, provider_id: str = None
-    ) -> str:
+    ) -> dict:
         s, v, i = scores["simp"], scores["vibe"], scores["ick"]
 
         prompt = f"""
         你现在是 Galgame 《恋爱法庭》中的“毒舌裁判官”。
-        请根据以下被告（群成员）的今日恋爱成分数据，写一段 50 字以内的判词。
+        请根据以下被告（群成员）的今日恋爱成分数据，进行深度诊断。
         
         【被告数据】
         - 判定人设: {archetype}
@@ -26,16 +26,35 @@ class LLMAnalyzer:
         - 撤回: {raw_data.get("recall_count", 0)} 次
         - 被贴贴: {raw_data.get("reaction_received", 0)} 次
 
-        【要求】
-        1. 语气：中二、毒舌、高高在上，或者像傲娇的 Galgame 女主角。
-        2. 必须引用至少一个变量名（如 E, V, I, S）来进行伪科学解释。
-        3. 严禁说教，要有趣味性。
-        4. 字数控制在 50 字左右。
+        【输出要求】
+        请严格按以下格式输出，不要包含任何额外文字：
+        [JUDGMENT]
+        一段 50 字以内的判词，语气要中二、毒舌、有 Galgame 感。
+        [DIAGNOSTICS]
+        1. 行为 1 的诊断（结合 V/I/S 变量解释意义）。
+        2. 行为 2 的诊断。
+        3. 行为 3 的诊断（如果有）。
         """
 
         # 调用 AstrBot LLM API
-        # 使用 tool_loop_agent=False 仅获取文本生成结果
-        response = await self.context.llm_generate(
-            prompt=prompt, chat_provider_id=provider_id
-        )
-        return response.completion_text
+        try:
+            response = await self.context.llm_generate(
+                prompt=prompt, chat_provider_id=provider_id
+            )
+            text = response.completion_text
+
+            # 简单解析
+            parts = text.split("[DIAGNOSTICS]")
+            judgment = parts[0].replace("[JUDGMENT]", "").strip()
+            diagnostics_raw = parts[1].strip() if len(parts) > 1 else ""
+
+            diagnostics = [d.strip() for d in diagnostics_raw.split("\n") if d.strip()]
+            # 去掉可能的数字前缀 (如 "1. ") 如果存在
+            diagnostics = [
+                d[2:].strip() if d.startswith(("1.", "2.", "3.", "4.")) else d
+                for d in diagnostics
+            ]
+
+            return {"comment": judgment, "diagnostics": diagnostics}
+        except Exception:
+            return {"comment": "LLM 暂时无法处理，请稍后再试。", "diagnostics": []}

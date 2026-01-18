@@ -101,53 +101,57 @@ class LoveFormulaPlugin(Star):
         archetype_key, archetype_name = ArchetypeClassifier.classify(scores)
 
         # 4. LLM 分析
-        commentary = "获取失败"
+        # 4. LLM 分析 (获取判词和诊断)
+        llm_result = {"comment": "获取失败", "diagnostics": []}
+        raw_data_dict = (
+            daily_data.model_dump()
+        )  # Ensure raw_data_dict is available for metrics
         if self.config.get("enable_llm_commentary", True):
-            raw_data_dict = daily_data.model_dump()
-            # 如果配置了 provider_id 则传入
-
             provider_id = self.config.get("llm_provider_id", "")
-            commentary = await self.llm.generate_commentary(
-                scores["raw"], archetype_name, raw_data_dict, provider_id=provider_id
+            # 注意: 现在 generate_commentary 返回的是字典 {"comment": "...", "diagnostics": [...]}
+            llm_result = await self.llm.generate_commentary(
+                scores, archetype_name, raw_data_dict, provider_id=provider_id
             )
         else:
-            commentary = "LLM点评已关闭。"
+            llm_result["comment"] = "LLM点评已关闭。"
 
-        # 5. 渲染图片
-        logger.debug(f"准备渲染图片，Archetype: {archetype_name}, Scores: {scores}")
+        # 5. 组装诊断叙事 (如果 LLM 没给，就用内置逻辑 fallback)
+        if not llm_result.get("diagnostics"):
+            logic_insights = self._generate_diagnostic_insights(
+                scores, raw_data_dict, archetype_key
+            )
+        else:
+            logic_insights = llm_result["diagnostics"]
 
-        theme = self.config.get("theme", "galgame")
-
-        # 构造符合模板要求的数据结构
-        # Template expects: avatar_url, user_name, title, score, metrics, comment, generated_time
+        # 6. 构造渲染数据
+        # Template expects: avatar_url, user_name, title, score, metrics, logic_insights, comment, generated_time
         sender = event.message_obj.sender
         user_name = sender.nickname if sender else f"用户{user_id}"
-        # 尝试构建头像 URL (OneBot V11 风格)
         avatar_url = f"https://q1.qlogo.cn/g?b=qq&nk={user_id}&s=640"
-
         from datetime import datetime
 
         render_data = {
             "user_name": user_name,
             "user_id": user_id,
             "avatar_url": avatar_url,
-            "title": archetype_name,  # 使用人设作为 title
-            "score": int(
-                (scores["simp"] + scores["vibe"] + scores["ick"]) / 3
-            ),  # 计算总分
+            "title": archetype_name,
+            "score": int((scores["simp"] + scores["vibe"] + scores["ick"]) / 3),
             "metrics": {
-                "舔狗值": scores["simp"],
-                "魅力值": scores["vibe"],
-                "下头值": scores["ick"],
-                "纯爱度": scores.get("pure_love", 0),  # 假设 calculator 返回了这些
-                "发言数": raw_data_dict.get("msg_sent", 0),
+                "舔狗值": f"{scores['simp']}%",
+                "魅力值": f"{scores['vibe']}%",
+                "下头值": f"{scores['ick']}%",
+                "互动频率": f"{raw_data_dict.get('msg_sent', 0)}条/日",
+                "平均字数": f"{int(raw_data_dict.get('text_len_total', 0) / raw_data_dict.get('msg_sent', 1)) if raw_data_dict.get('msg_sent', 0) > 0 else 0}字",
             },
-            "comment": commentary,
+            "logic_insights": logic_insights,
+            "comment": llm_result.get("comment", "获取失败"),
             "generated_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
 
         logger.debug(f"Render Data: {render_data}")
 
+        # 7. 渲染图片
+        theme = self.config.get("theme", "galgame")
         try:
             image_path = await self.renderer.render(render_data, theme_name=theme)
             logger.info(f"图片渲染成功: {image_path}")
@@ -164,3 +168,63 @@ class LoveFormulaPlugin(Star):
         except Exception as e:
             logger.error(f"Render failed: {e}", exc_info=True)
             yield event.plain_result(f"生成失败: {e}")
+
+    def _generate_diagnostic_insights(
+        self, scores: dict, raw_data: dict, archetype_key: str
+    ) -> list:
+        """生成叙事性的行为诊断报告"""
+        insights = []
+
+        # 1. 舔狗值诊断 (S)
+        msg_sent = raw_data.get("msg_sent", 0)
+        poke_sent = raw_data.get("poke_sent", 0)
+        if scores["simp"] > 60:
+            insights.append(
+                f"主动付出判定: 你今日发送了 {msg_sent} 条消息并主动‘戳了戳’他人 {poke_sent} 次。这种高频的单向互动大幅推高了你的‘舔狗值’，反映出你强烈的社交欲望。"
+            )
+        else:
+            insights.append(
+                f"社交投入判定: 你今日的发言频率与互动强度适中，处于健康的社交平衡区间，没有表现出过度的低姿态倾向。"
+            )
+
+        # 2. 魅力值诊断 (V)
+        reply_recv = raw_data.get("reply_received", 0)
+        reaction_recv = raw_data.get("reaction_received", 0)
+        if scores["vibe"] > 60:
+            insights.append(
+                f"吸引力判定: 你的言论引发了群友的广泛关注。收到了 {reply_recv} 次回复和 {reaction_recv} 次表情回应。这表明你今天的发言质量极高，是群内的社交核心。"
+            )
+        elif scores["vibe"] < 20:
+            insights.append(
+                f"存在感判定: 群友对你的回应较少（仅 {reply_recv} 次回复）。建议通过发送有趣的表情包或参与热门话题来提升你的存在感。"
+            )
+        else:
+            insights.append(
+                f"反馈能量判定: 你的发言获得了一定程度的反馈，社交磁场保持稳定。"
+            )
+
+        # 3. 下头值诊断 (I)
+        recall = raw_data.get("recall_count", 0)
+        if recall > 0:
+            insights.append(
+                f"社交稳定性判定: 你今日撤回了 {recall} 条消息。在社交模型中，频繁撤回被视为‘犹豫’或‘不确定性’，每撤回一条会显著增加你的‘下头值’({LoveCalculator.W_RECALL}分/条)。"
+            )
+
+        # 4. 人设由来
+        insights.append(
+            f"人设达成逻辑: 基于上述数据，{self._get_archetype_reason(archetype_key, scores)}"
+        )
+
+        return insights
+
+    def _get_archetype_reason(self, key: str, scores: dict) -> str:
+        """根据 Key 返回判定理由"""
+        reasons = {
+            "THE_SIMP": f"由于你的投入({scores['simp']}%)远高于群友对你的反馈({scores['vibe']}%)，满足了‘沸羊羊’判定门槛。",
+            "THE_PLAYER": f"因为你只需较低的投入就能换取极高的群友反馈({scores['vibe']}%)，表现出典型的‘海王’特征。",
+            "HIMBO": f"虽然你的魅力值({scores['vibe']}%)很高，但撤回行为带来的下头值({scores['ick']}%)让你的表现显得矛盾而迷人。",
+            "IDOL": f"你几乎不主动付出({scores['simp']}%)却依然保有一定的群友关注，这种高冷姿态符合‘男神/女神’的设定。",
+            "NPC": f"你今日的各项交互数据均处于极低水平，系统判定你正在群内‘潜水’观望。",
+            "NORMAL": f"各项指标分布均匀，没有极端异常的数据表现，是一个平稳社交的普通群友。",
+        }
+        return reasons.get(key, "数据分布符合该人设的特征判定区间。")

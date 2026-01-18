@@ -125,24 +125,33 @@
         }
 
         .radar-chart {
-            margin: 20px 0;
-            /* Placeholder for radar chart visualization */
-            display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
-            gap: 10px;
+            margin: 25px 0;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 12px;
         }
 
         .metric-item {
             background: #fff0f3;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 0.85rem;
+            padding: 10px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 30%;
+            justify-content: center;
             box-sizing: border-box;
+            transition: transform 0.2s;
+            grid-column: span 2;
+        }
+
+        /* 使最后两个指标居中显示 */
+        .metric-item:nth-child(4) {
+            grid-column: 2 / span 2;
+        }
+
+        .metric-item:nth-child(5) {
+            grid-column: 4 / span 2;
         }
 
         .metric-name {
@@ -158,13 +167,14 @@
         .comment-box {
             background: #fbfbfb;
             border-left: 4px solid var(--primary-color);
-            padding: 15px;
-            margin-top: 20px;
+            padding: 20px;
+            margin: 25px 0;
             position: relative;
-            font-size: 0.95rem;
-            line-height: 1.6;
+            font-size: 1rem;
+            line-height: 1.8;
             color: #555;
             background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1h2v2H1V1zm4 0h2v2H5V1zm4 0h2v2H9V1zm4 0h2v2h-2V1zm4 0h2v2h-2V1zm-16 4h2v2H1V5zm4 0h2v2H5V5zm4 0h2v2H9V5zm4 0h2v2h-2V5zm4 0h2v2h-2V5zM1 9h2v2H1V9zm4 0h2v2H5V9zm4 0h2v2H9V9zm4 0h2v2h-2V9zm4 0h2v2h-2V9zm-16 4h2v2H1v-2zm4 0h2v2H5v-2zm4 0h2v2H9v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2zM1 17h2v2H1v-2zm4 0h2v2H5v-2zm4 0h2v2H9v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2z' fill='%23f0f0f0' fill-opacity='0.4' fill-rule='evenodd'/%3E%3C/svg%3E");
+            border-radius: 0 12px 12px 0;
         }
 
         .comment-box::before {
@@ -176,6 +186,47 @@
             top: -10px;
             left: 5px;
             font-family: serif;
+        }
+
+        .logic-section {
+            margin-top: 25px;
+            background: rgba(255, 107, 129, 0.03);
+            border-radius: 16px;
+            padding: 20px;
+            border: 2px dashed rgba(255, 107, 129, 0.15);
+        }
+
+        .logic-title {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .logic-list {
+            padding-left: 15px;
+            margin: 0;
+            font-size: 0.8rem;
+            color: #666;
+            list-style-type: decimal;
+        }
+
+        .logic-item {
+            margin-bottom: 12px;
+            line-height: 1.6;
+            position: relative;
+            padding-left: 15px;
+        }
+
+        .logic-item::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: var(--primary-color);
+            font-weight: bold;
         }
 
         .footer {
@@ -204,22 +255,55 @@
 
         <div class="content">
             <div class="score-section">
-                <div class="score-label">今日恋爱能量值</div>
+                <div class="score-label">今日恋爱社交能量</div>
                 <div class="score-value">{{ data.score }}%</div>
             </div>
 
             <div class="radar-chart">
-                {% for key, val in data.metrics.items() %}
                 <div class="metric-item">
-                    <span class="metric-name">{{ key }}</span>
-                    <span class="metric-val">{{ val }}</span>
+                    <span class="metric-name">舔狗值</span>
+                    <span class="metric-val">{{ data.metrics["舔狗值"] }}</span>
                 </div>
-                {% endfor %}
+                <div class="metric-item">
+                    <span class="metric-name">魅力值</span>
+                    <span class="metric-val">{{ data.metrics["魅力值"] }}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-name">下头值</span>
+                    <span class="metric-val">{{ data.metrics["下头值"] }}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-name">互动频率</span>
+                    <span class="metric-val">{{ data.metrics["互动频率"] }}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-name">平均字数</span>
+                    <span class="metric-val">{{ data.metrics["平均字数"] }}</span>
+                </div>
             </div>
 
             <div class="comment-box">
                 {{ data.comment }}
             </div>
+
+            {% if data.logic_insights %}
+            <div class="logic-section">
+                <div class="logic-title">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    社交行为诊断报告 (Behavioral Diagnosis)
+                </div>
+                <ul class="logic-list" style="list-style-type: none; padding-left: 0;">
+                    {% for item in data.logic_insights %}
+                    <li class="logic-item">{{ item }}</li>
+                    {% endfor %}
+                </ul>
+                <div style="font-size: 0.75rem; color: #999; margin-top: 10px; font-style: italic; text-align: right;">
+                    ※ 建议：保持真实的社交节奏，数据仅供娱乐
+                </div>
+            </div>
+            {% endif %}
 
             <div class="footer">
                 Generate by AstrBot Plugin Love Formula • {{ data.generated_time }}
