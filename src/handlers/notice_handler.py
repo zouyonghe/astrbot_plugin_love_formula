@@ -1,7 +1,5 @@
-from astrbot.core.log import LogManager
+from astrbot.api import logger
 from ..persistence.repo import LoveRepo
-
-logger = LogManager.GetLogger("astrbot_plugin_love_formula")
 
 
 class NoticeHandler:

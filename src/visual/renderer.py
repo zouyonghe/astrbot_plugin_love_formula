@@ -1,10 +1,8 @@
+from astrbot.api import logger
 from astrbot.core import html_renderer
-from astrbot.core.log import LogManager
 from jinja2 import Environment, FileSystemLoader
 from astrbot.core.star.context import Context
 from .theme_manager import ThemeManager
-
-logger = LogManager.GetLogger("astrbot_plugin_love_formula.renderer")
 
 
 class LoveRenderer:

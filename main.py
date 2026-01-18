@@ -1,5 +1,5 @@
 import os
-from astrbot.core.log import LogManager
+from astrbot.api import logger
 from astrbot.core.star import Star
 from astrbot.core.star.context import Context
 from astrbot.api.event import AstrMessageEvent, filter
@@ -15,8 +15,6 @@ from .src.analysis.classifier import ArchetypeClassifier
 from .src.analysis.llm_analyzer import LLMAnalyzer
 from .src.visual.theme_manager import ThemeManager
 from .src.visual.renderer import LoveRenderer
-
-logger = LogManager.GetLogger("astrbot_plugin_love_formula")
 
 
 class NoticeFilter(CustomFilter):
@@ -57,6 +55,9 @@ class LoveFormulaPlugin(Star):
     @filter.event_message_type(EventMessageType.GROUP_MESSAGE)
     async def on_group_message(self, event: AstrMessageEvent):
         """处理群消息监听"""
+        logger.info(
+            f"[LoveFormula] on_group_message 触发: {event.message_obj.message_id}"
+        )
         await self.msg_handler.handle_message(event)
 
     @filter.custom_filter(NoticeFilter)
