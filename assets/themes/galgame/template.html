@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Love Analysis</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            width: 800px;
+            height: 600px;
+            background: url('{{ asset_dir }}/background.png') no-repeat center center;
+            background-size: cover;
+            font-family: 'Arial', sans-serif;
+            color: {{ theme_config.font_color }};
+            overflow: hidden;
+            position: relative;
+        }
+        .character {
+            position: absolute;
+            bottom: 0;
+            left: 50px;
+            height: 500px; /* Adjust based on asset */
+            filter: drop-shadow(0 0 10px rgba(0,0,0,0.5));
+        }
+        .text-box {
+            position: absolute;
+            bottom: 20px;
+            left: 50px;
+            right: 50px;
+            min-height: 150px;
+            padding: 20px;
+            background: {{ theme_config.text_box.bg_color }};
+            border: 5px solid white; 
+            border-radius: 10px;
+            box-sizing: border-box;
+            font-size: 18px;
+            line-height: 1.5;
+        }
+        .stats {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.6);
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .stat-row {
+            margin-bottom: 5px;
+        }
+        .math-formula {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Character Overlay -->
+    <!-- Placeholder image for now -->
+    <!-- <img src="{{ asset_dir }}/character_default.png" class="character"> -->
+    
+    <!-- Stats Panel -->
+    <div class="stats">
+        <div class="stat-row"><strong>Archetype:</strong> {{ data.archetype }}</div>
+        <div class="stat-row" style="color:{{ theme_config.colors.simp }}">Simp (S): {{ data.scores.simp }}</div>
+        <div class="stat-row" style="color:{{ theme_config.colors.vibe }}">Vibe (V): {{ data.scores.vibe }}</div>
+        <div class="stat-row" style="color:{{ theme_config.colors.ick }}">Ick (I): {{ data.scores.ick }}</div>
+    </div>
+
+    <!-- Text Box with Commentary -->
+    <div class="text-box">
+        <div class="math-formula">
+            $$ J_{love} = \int_{today} e^{-rt} dt $$
+        </div>
+        <div id="commentary">
+            {{ data.commentary }}
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false}
+                ]
+            });
+        });
+    </script>
+</body>
+</html>

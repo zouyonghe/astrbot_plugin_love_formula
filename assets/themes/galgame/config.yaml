@@ -1,0 +1,11 @@
+name: "Galgame Style"
+font_color: "#ffffff"
+font_family: "MagicalFont"
+text_box:
+  border_image: "textbox_border.png"
+  slice: 20
+  bg_color: "rgba(0, 0, 0, 0.7)"
+colors:
+  simp: "#FF69B4"
+  vibe: "#00CED1"
+  ick: "#800080"

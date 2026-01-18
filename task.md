@@ -13,8 +13,9 @@
 - [x] Implement NapCat Handlers (`handlers`) <!-- id: 9 -->
     - [x] Create `handlers/message_handler.py` <!-- id: 109 -->
     - [x] Create `handlers/notice_handler.py` <!-- id: 110 -->
-- [ ] Implement Visual Renderer (`visual`) <!-- id: 11 -->
-    - [ ] Create `visual/theme_manager.py` <!-- id: 111 -->
-    - [ ] Create `visual/renderer.py` <!-- id: 112 -->
-    - [ ] Create `assets/themes/galgame` structure <!-- id: 113 -->
+- [x] Implement Visual Renderer (`visual`) <!-- id: 11 -->
+    - [x] Create `visual/theme_manager.py` <!-- id: 111 -->
+    - [x] Create `visual/renderer.py` <!-- id: 112 -->
+    - [x] Create `assets/themes/galgame` structure <!-- id: 113 -->
+- [ ] Implement Main Entry (`main.py`) <!-- id: 114 -->
 - [ ] Verification <!-- id: 12 -->
