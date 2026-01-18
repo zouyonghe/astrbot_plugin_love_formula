@@ -47,6 +47,8 @@ class LoveFormulaPlugin(Star):
         self.theme_mgr = ThemeManager(os.path.dirname(os.path.abspath(__file__)))
         self.renderer = LoveRenderer(context, self.theme_mgr)
         self.llm = LLMAnalyzer(context)
+        self.calculator = LoveCalculator()
+        self.classifier = ArchetypeClassifier()
 
     async def init(self):
         """AstrBot 调用的异步初始化方法"""
@@ -96,7 +98,7 @@ class LoveFormulaPlugin(Star):
 
         # 2. 计算分数
 
-        scores = LoveCalculator.calculate_scores(daily_data)
+        scores = self.calculator.calculate_scores(daily_data)
 
         # 3. 归类人设
 
