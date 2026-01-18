@@ -54,7 +54,10 @@ class LoveRenderer:
                 tmpl_str=html_content,
                 tmpl_data={},
                 return_url=False,
-                options={"type": "jpeg", "quality": 95},
+                options={
+                    "type": "jpeg",
+                    "clip": {"x": 0, "y": 0, "width": 540, "height": 850},
+                },
             )
             logger.info(f"图片生成完成: {path}")
             return path

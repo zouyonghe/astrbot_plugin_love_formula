@@ -151,7 +151,16 @@ class LoveFormulaPlugin(Star):
         try:
             image_path = await self.renderer.render(render_data, theme_name=theme)
             logger.info(f"图片渲染成功: {image_path}")
-            yield event.image_result(image_path)
+
+            # Convert to Base64 to avoid "rich media transfer failed" error
+            import base64
+
+            with open(image_path, "rb") as f:
+                b64_str = base64.b64encode(f.read()).decode()
+
+            from astrbot.core.message.components import Image
+
+            yield event.chain_result([Image.fromBase64(b64_str)])
         except Exception as e:
             logger.error(f"Render failed: {e}", exc_info=True)
             yield event.plain_result(f"生成失败: {e}")
