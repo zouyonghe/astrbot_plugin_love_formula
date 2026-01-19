@@ -129,3 +129,43 @@ class LoveRepo:
             )
             result = await session.execute(stmt)
             return result.scalar_one_or_none()
+
+    async def apply_honor_bonus(self, group_id: str, honor_data: dict) -> int:
+        """根据群荣誉信息发放初始点数，返回同步的荣誉数量"""
+        if not honor_data:
+            return 0
+
+        honor_count = 0
+        async with self.db.get_session() as session:
+            # 1. 龙王 (Talkative) - 活跃度与存在感双高
+            talkative = honor_data.get("talkative", {})
+            if talkative:
+                uid = str(talkative.get("user_id"))
+                if uid:
+                    ref = await self.get_or_create_daily_ref(session, group_id, uid)
+                    ref.msg_sent += 20  # 虚拟发言数，提升分值
+                    ref.reply_received += 5
+                    ref.updated_at = time.time()
+                    honor_count += 1
+
+            # 2. 表演者 (Performer) - 存在感高
+            performers = honor_data.get("performer", [])
+            for p in performers:
+                uid = str(p.get("user_id"))
+                if uid:
+                    ref = await self.get_or_create_daily_ref(session, group_id, uid)
+                    ref.reply_received += 10
+                    ref.updated_at = time.time()
+                    honor_count += 1
+
+            # 3. 快乐源泉 (Emotion) - 白月光值高
+            emotions = honor_data.get("emotion", [])
+            for e in emotions:
+                uid = str(e.get("user_id"))
+                if uid:
+                    ref = await self.get_or_create_daily_ref(session, group_id, uid)
+                    ref.image_sent += 5
+                    ref.topic_count += 2
+                    ref.updated_at = time.time()
+                    honor_count += 1
+        return honor_count

@@ -76,3 +76,123 @@ class MessageHandler:
                     await self.repo.update_interaction_received(
                         group_id, final_target, reply=1
                     )
+
+    async def backfill_from_history(self, group_id: str, messages: list[dict]):
+        """从历史记录中回填今日数据，仅处理基础指标与话题"""
+        from datetime import date
+
+        today = date.today()
+
+        # 按照时间从小到大排序
+        sorted_messages = sorted(messages, key=lambda x: x.get("time", 0))
+
+        # 记录每位用户的统计，最后统一入库或按条入库（这里按条入库以复用 repo 逻辑，并处理重复）
+        group_last_time = 0
+        stats = {
+            "msg_count": 0,
+            "image_count": 0,
+            "topic_count": 0,
+            "reply_count": 0,
+            "at_count": 0,
+        }
+
+        for msg in sorted_messages:
+            msg_time = msg.get("time", 0)
+            # 仅处理今天的消息
+            import datetime
+
+            dt = datetime.datetime.fromtimestamp(msg_time)
+            if dt.date() != today:
+                continue
+
+            msg_id = str(msg.get("message_id", ""))
+            if not msg_id:
+                continue
+
+            # 检查是否已处理过
+            if await self.repo.get_message_owner(msg_id):
+                # 如果已存在，更新上下文时间但跳过统计
+                group_last_time = msg_time
+                continue
+
+            user_id = str(msg.get("sender", {}).get("user_id", ""))
+            if not user_id:
+                continue
+
+            # 1. 提取内容与交互信息
+            raw_message = msg.get("message", "")
+            text_content = ""
+            current_images = 0
+            reply_target_msg_id = None
+            at_targets = []
+
+            if isinstance(raw_message, str):
+                text_content = raw_message
+            elif isinstance(raw_message, list):
+                for seg in raw_message:
+                    s_type = seg.get("type", "")
+                    s_data = seg.get("data", {})
+                    if s_type == "text":
+                        text_content += s_data.get("text", "")
+                    elif s_type == "image":
+                        current_images += 1
+                    elif s_type == "reply":
+                        reply_target_msg_id = str(s_data.get("id"))
+                    elif s_type == "at":
+                        at_qq = s_data.get("qq")
+                        if at_qq:
+                            at_targets.append(str(at_qq))
+
+            # 2. 判定话题 (Nos)
+            topic_inc = 0
+            if (
+                group_last_time > 0
+                and (msg_time - group_last_time) > self.nos_col.TOPIC_THRESHOLD
+            ):
+                topic_inc = 1
+            elif group_last_time == 0:
+                topic_inc = 1
+
+            # 3. 持久化与交互处理
+            await self.repo.save_message_index(msg_id, group_id, user_id)
+            await self.repo.update_msg_stats(
+                group_id=group_id,
+                user_id=user_id,
+                text_len=len(text_content),
+                image_count=current_images,
+            )
+
+            if topic_inc > 0:
+                await self.repo.update_behavior_stats(
+                    group_id, user_id, topic_inc=topic_inc
+                )
+                stats["topic_count"] += 1
+
+            # 历史交互归因
+            if reply_target_msg_id:
+                owner = await self.repo.get_message_owner(reply_target_msg_id)
+                if owner and owner.user_id != user_id:
+                    await self.repo.update_interaction_sent(group_id, user_id, reply=1)
+                    await self.repo.update_interaction_received(
+                        group_id, owner.user_id, reply=1
+                    )
+                    stats["reply_count"] += 1
+
+            for at_target in at_targets:
+                if at_target != user_id:
+                    # 将 @ 提及回填为基础互动点数 (Vibe)
+                    await self.repo.update_interaction_received(
+                        group_id, at_target, reply=0
+                    )
+                    stats["at_count"] += 1
+
+            # 更新统计
+            stats["msg_count"] += 1
+            stats["image_count"] += current_images
+            group_last_time = msg_time
+
+        # 更新类静态上下文（防止回填后立即说话判定错误）
+        if group_last_time > 0:
+            MessageHandler._group_last_msg_time[group_id] = group_last_time
+
+        return stats

@@ -136,10 +136,10 @@ class OneBotAdapter:
         if hasattr(event, "self_id") and event.self_id:
             black_list_ids.add(str(event.self_id))
 
-        bot = getattr(event, "bot", None)
-        if bot:
+        bot_obj = getattr(event, "bot", None)
+        if bot_obj:
             for attr in ["self_id", "qq", "user_id"]:
-                val = getattr(bot, attr, None)
+                val = getattr(bot_obj, attr, None)
                 if val:
                     black_list_ids.add(str(val))
 
@@ -165,7 +165,6 @@ class OneBotAdapter:
             role = "[Target]" if sender_id == str(target_user_id) else "[Other]"
 
             # 获取内容 (简单的文本提取)
-            # 消息可能是字典、字符串或片段列表
             content = self._extract_text(msg.get("message", ""))
 
             if not content:
@@ -187,6 +186,79 @@ class OneBotAdapter:
 
         return dialogue_context
 
+    async def fetch_raw_group_history(
+        self, event: AstrMessageEvent, count: int = 100
+    ) -> list[dict]:
+        """
+        获取原始群聊历史记录，不进行角色标记或过滤，用于数据回填。
+        """
+        if not event.message_obj.group_id:
+            return []
+
+        group_id = event.message_obj.group_id
+        bot = getattr(event, "bot", None)
+        params = {
+            "group_id": int(group_id) if str(group_id).isdigit() else group_id,
+            "count": count,
+        }
+
+        try:
+            # 这里的策略与 fetch_context 类似，但更直接
+            if bot and hasattr(bot, "api") and hasattr(bot.api, "call_action"):
+                resp = await bot.api.call_action("get_group_msg_history", **params)
+                if resp:
+                    return resp.get("messages", [])
+
+            if bot and hasattr(bot, "call_api"):
+                resp = await bot.call_api("get_group_msg_history", **params)
+                if resp:
+                    return resp.get("messages", [])
+        except Exception as e:
+            logger.warning(f"OneBotAdapter: 原始历史记录获取失败: {e}")
+
+        return []
+
+    async def fetch_group_honor(self, event: AstrMessageEvent) -> dict:
+        """获取群荣誉信息 (龙王、群聊之星等)"""
+        group_id = event.message_obj.group_id
+        bot = getattr(event, "bot", None)
+        if not bot:
+            return {}
+
+        params = {
+            "group_id": int(group_id) if str(group_id).isdigit() else group_id,
+            "type": "all",
+        }
+        try:
+            if hasattr(bot, "api") and hasattr(bot.api, "call_action"):
+                resp = await bot.api.call_action("get_group_honor_info", **params)
+                return resp if resp else {}
+            if hasattr(bot, "call_api"):
+                resp = await bot.call_api("get_group_honor_info", params)
+                return resp if resp else {}
+        except Exception as e:
+            logger.warning(f"OneBotAdapter: 获取群荣誉失败: {e}")
+        return {}
+
+    async def fetch_group_member_list(self, event: AstrMessageEvent) -> list[dict]:
+        """获取群成员列表数据"""
+        group_id = event.message_obj.group_id
+        bot = getattr(event, "bot", None)
+        if not bot:
+            return []
+
+        params = {"group_id": int(group_id) if str(group_id).isdigit() else group_id}
+        try:
+            if hasattr(bot, "api") and hasattr(bot.api, "call_action"):
+                resp = await bot.api.call_action("get_group_member_list", **params)
+                return resp if resp else []
+            if hasattr(bot, "call_api"):
+                resp = await bot.call_api("get_group_member_list", params)
+                return resp if resp else []
+        except Exception as e:
+            logger.warning(f"OneBotAdapter: 获取群成员列表失败: {e}")
+        return []
+
     def _extract_text(self, message_chain) -> str:
         """从消息链中提取纯文本的辅助函数。"""
         text_parts = []
@@ -207,5 +279,25 @@ class OneBotAdapter:
                     text_parts.append("[图片]")
                 elif type_ == "at":
                     text_parts.append(f"@{data.get('qq', 'User')}")
+                elif type_ == "reply":
+                    # 识别回复段
+                    text_parts.append("[回复]")
 
         return "".join(text_parts).strip()
+
+    def _extract_interactions(self, message_chain) -> dict:
+        """从消息链中提取交互信息 (回复、提及)"""
+        interactions = {"reply_to": None, "at_list": []}
+        if not isinstance(message_chain, list):
+            return interactions
+
+        for segment in message_chain:
+            type_ = segment.get("type")
+            data = segment.get("data", {})
+            if type_ == "reply":
+                interactions["reply_to"] = str(data.get("id"))  # 这是一个 message_id
+            elif type_ == "at":
+                at_qq = data.get("qq")
+                if at_qq:
+                    interactions["at_list"].append(str(at_qq))
+        return interactions

@@ -138,6 +138,36 @@ class LoveFormulaPlugin(Star):
             yield event.plain_result("此群未启用恋爱分析功能。")
             return
 
+        # --- 深度冷启动回填与荣誉同步 ---
+        today_data = await self.repo.get_today_data(group_id, user_id)
+        if not today_data or today_data.msg_sent < 3:
+            # 数据显著不足，启动深度同步
+            try:
+                # 1. 同步群荣誉 (龙王、快乐源泉等)
+                honor_data = await self.history_fetcher.fetch_group_honor(event)
+                honor_count = 0
+                if honor_data:
+                    honor_count = await self.repo.apply_honor_bonus(
+                        str(group_id), honor_data
+                    )
+                    logger.info(f"已同步群 {group_id} 的 {honor_count} 条荣誉数据。")
+
+                # 2. 回填历史消息
+                raw_history = await self.history_fetcher.fetch_raw_group_history(
+                    event, count=self.config.get("analyze_history_count", 100)
+                )
+                if raw_history:
+                    stats = await self.msg_handler.backfill_from_history(
+                        str(group_id), raw_history
+                    )
+                    logger.info(
+                        f"[LoveFormula] 成功为群 {group_id} 执行了增强型历史回填: {stats}, 同步荣誉: {honor_count}"
+                    )
+
+            except Exception as e:
+                logger.warning(f"深度冷启动同步失败: {e}")
+        # ---------------------
+
         # 尝试获取昨日得分作为白月光值
         from datetime import date, timedelta
 
