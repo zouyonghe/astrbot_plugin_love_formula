@@ -102,16 +102,24 @@ class LLMAnalyzer:
     def _repair_json(self, text: str) -> str:
         """Attempts to repair common LLM JSON syntax errors."""
 
-        # 1. Fix unquoted hashtags: #tag -> "#tag"
+        # 1. Fix unquoted hashtags and hallucinations like #"Tag" or ##Tag
+        # Match strings or hashtags (possibly with leading/trailing quotes/junk)
         # Using a "match and skip" strategy for strings to avoid false positives.
-        # This regex matches strings or hashtags.
-        pattern = r'("(?:\\.|[^"\\])*")|(#[\w\u4e00-\u9fa5]+)'
+        pattern = r'("(?:\\.|[^"\\])*")|(#\s*"?[\w\u4e00-\u9fa5]+"?)|(#+)'
 
         def replace_tag(match):
             if match.group(1):  # It's a string, return as is
                 return match.group(1)
-            # It's an unquoted hashtag, wrap it
-            return f'"{match.group(2)}"'
+
+            tag_content = match.group(2)
+            if tag_content:
+                # Normalize: remove stray quotes and # prefix, ensure single #
+                word = tag_content.lstrip("#").strip().strip('"')
+                if word:
+                    return f'"#{word}"'
+
+            # Stray # or ##, just quote it to avoid syntax error
+            return '"#"'
 
         text = re.sub(pattern, replace_tag, text)
 
@@ -124,21 +132,21 @@ class LLMAnalyzer:
         """Heuristic extraction of deep dive data using regex fallback."""
         # 1. Keywords: Matches Keywords: ["#a", "#b"] or Keywords: #a #b
         kw_match = re.search(
-            r'(?:KEYWORDS|keywords)["\']?\s*[:：]\s*[\[\(]?([^\]\)]+)[\]\)]?',
-            text,
-            re.IGNORECASE,
+            r'(?i)(?:KEYWORDS|keywords)["\']?\s*[:：]\s*[\[\(]?([^\]\)]+)[\]\)]?', text
         )
         keywords = []
         if kw_match:
-            # Extract anything starting with #
-            keywords = re.findall(r'#([^\s,，"\'\]\}]+)', kw_match.group(1))
-            keywords = [f"#{k}" for k in keywords]
+            # More permissive: extract anything starting with # and capture the word
+            raw_kws = re.findall(
+                r'#\s*["\']?([^"\',，\s\]\}]+)["\']?', kw_match.group(1)
+            )
+            keywords = [f"#{k.strip()}" for k in raw_kws if k.strip()]
 
         # 2. Analysis: Extracts content after ANALYSIS:
         ana_match = re.search(
-            r'(?:ANALYSIS|analysis)["\']?\s*[:：]\s*["\']?(.*?)(?:["\']?\s*[,，]?\s*(?:"|EVIDENCE|evidence)|$)',
+            r'(?i)(?:ANALYSIS|analysis)["\']?\s*[:：]\s*["\']?(.*?)(?:["\']?\s*[,，]?\s*(?:"|EVIDENCE|evidence)|$)',
             text,
-            re.IGNORECASE | re.DOTALL,
+            re.DOTALL,
         )
         analysis = ""
         if ana_match:
@@ -155,6 +163,14 @@ class LLMAnalyzer:
                 continue
             title = title_match.group(1).strip()
 
+            # NEW: Extract the actual reason from the block
+            reason = "由正则表达式兜底提取 (Reason Extraction Failed)"
+            reason_match = re.search(
+                r'(?i)reason["\']?\s*[:：]\s*["\']?([^"\',\}]+)["\']?', block
+            )
+            if reason_match:
+                reason = reason_match.group(1).strip()
+
             # Find the dialogue portion in this block
             diag_match = re.search(
                 r'(?i)dialogue["\']?\s*[:：]\s*\[(.*)', block, re.DOTALL
@@ -163,14 +179,13 @@ class LLMAnalyzer:
                 continue
 
             diag_blob = diag_match.group(1)
-            # Find the closing bracket for this dialogue array by looking for the last } followed by ]
+            # Find the closing bracket for this dialogue array
             last_bracket = diag_blob.rfind("]")
             if last_bracket != -1:
                 diag_blob = diag_blob[:last_bracket]
 
             dialogue = []
             # Extract entries like {"role": "...", "content": "..."}
-            # Handles varying property order and quoting styles
             entries = re.findall(r"\{([^{}]+)\}", diag_blob)
             for entry in entries:
                 role_m = re.search(
@@ -193,16 +208,8 @@ class LLMAnalyzer:
 
             if dialogue:
                 evidence.append(
-                    {
-                        "title": title,
-                        "reason": "由正则表达式兜底提取 (Regex Fallback)",
-                        "dialogue": dialogue,
-                    }
+                    {"title": title, "reason": reason, "dialogue": dialogue}
                 )
-
-        if keywords or analysis or evidence:
-            return {"keywords": keywords, "content": analysis, "evidence": evidence}
-        return None
 
         if keywords or analysis or evidence:
             return {"keywords": keywords, "content": analysis, "evidence": evidence}
