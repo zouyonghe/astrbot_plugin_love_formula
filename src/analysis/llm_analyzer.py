@@ -185,6 +185,7 @@ class LLMAnalyzer:
         }}
     ]
 }}
+**必须包含 DEEP_PSYCHE 和 EVIDENCE 两个一级 Key。EVIDENCE 数组不能为空，若无明显特征，请选取最近一次交互作为样本分析。**
 """
 
         try:
