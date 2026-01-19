@@ -38,26 +38,32 @@ class LoveFormulaPlugin(Star):
         # 1. 确定持久化存储路径
         from astrbot.core.utils.astrbot_path import get_astrbot_plugin_data_path
 
-        # 插件数据目录: data/plugin_data/astrbot_plugin_love_formula/
+        # 插件标准数据目录: data/plugin_data/astrbot_plugin_love_formula/
         data_dir = os.path.join(
             get_astrbot_plugin_data_path(), "astrbot_plugin_love_formula"
         )
-        if not os.path.exists(data_dir):
-            os.makedirs(data_dir, exist_ok=True)
-
         db_path = os.path.join(data_dir, "love_formula.db")
 
-        # 迁移逻辑: 如果旧路径存在数据库，则移动到新路径
-        old_db_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "love_formula.db"
-        )
-        if os.path.exists(old_db_path) and not os.path.exists(db_path):
-            try:
-                import shutil
+        # 2. 迁移逻辑: 优先检查标准路径。如果不存在 db，但插件目录下存在，则进行搬迁
+        if not os.path.exists(db_path):
+            old_db_path = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), "love_formula.db"
+            )
+            if os.path.exists(old_db_path):
+                # 确定目标目录存在
+                if not os.path.exists(data_dir):
+                    os.makedirs(data_dir, exist_ok=True)
+                try:
+                    import shutil
 
-                shutil.move(old_db_path, db_path)
-            except Exception:
-                pass  # 如果移动失败，则按新路径初始化，由 DBManager 处理
+                    shutil.move(old_db_path, db_path)
+                    logger.info(f"已将旧数据库迁移至标准存储路径: {db_path}")
+                except Exception:
+                    pass  # 如果移动失败，则按新路径初始化，由 DBManager 处理
+
+        # 无论是否搬迁，只要标准路径所属目录不存在（如全新安装），则创建
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir, exist_ok=True)
 
         self.db_mgr = DBManager(db_path)
         self.repo = LoveRepo(self.db_mgr)
