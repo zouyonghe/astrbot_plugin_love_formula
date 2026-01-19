@@ -35,8 +35,8 @@ sys.modules["astrbot.core"].html_renderer = mock_html_renderer
 sys.modules["astrbot.core.html_renderer"] = mock_html_renderer
 
 # Now import the local modules
-from src.visual.renderer import LoveRenderer
-from src.visual.theme_manager import ThemeManager
+from src.visual.renderer import LoveRenderer  # noqa: E402
+from src.visual.theme_manager import ThemeManager  # noqa: E402
 
 
 # Mock classes

@@ -35,8 +35,8 @@ mock_config_module = MagicMock()
 sys.modules["astrbot.core.config"] = mock_config_module
 
 # Now import renderer
-from src.visual.renderer import LoveRenderer
-from src.visual.theme_manager import ThemeManager
+from src.visual.renderer import LoveRenderer  # noqa: E402
+from src.visual.theme_manager import ThemeManager  # noqa: E402
 
 
 # Mock Context for our use
